@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Home Voice Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #eaf6ff;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    header img {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      margin: 0;
+    }
+
+    .device-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      justify-items: center;
+      margin-top: 20px;
+    }
+
+    .device {
+      background-color: #ffffff;
+      border-radius: 20px;
+      width: 140px;
+      height: 140px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .device:hover {
+      transform: scale(1.05);
+      background-color: #d0f0ff;
+    }
+
+    .device span {
+      font-size: 2.8em;
+      margin-bottom: 8px;
+    }
+
+    .device p {
+      margin: 0;
+      font-size: 1em;
+    }
+
+    .command-area {
+      margin-top: 30px;
+    }
+
+    button {
+      font-size: 1em;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .voice-btn {
+      background-color: #64b5f6;
+      color: white;
+    }
+
+    .emergency-btn {
+      background-color: #e53935;
+      color: white;
+    }
+
+    .active {
+      background-color: #b2ff59 !important;
+    }
+
+    .emergency-mode {
+      background-color: #ffe6e6;
+    }
+
+    #status {
+      font-size: 1.1em;
+      margin-top: 15px;
+      font-style: italic;
+      color: #333;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="https://www.gstatic.com/images/branding/product/1x/google_home_512dp.png" alt="Logo">
+    <h1>Smart Home Voice Control</h1>
+  </header>
+
+  <div class="device-grid">
+    <div id="fan" class="device"><span>🌀</span><p>Fan</p></div>
+    <div id="tv" class="device"><span>📺</span><p>TV</p></div>
+    <div id="speaker" class="device"><span>🔊</span><p>Speaker</p></div>
+    <div id="light" class="device"><span>💡</span><p>Light</p></div>
+  </div>
+
+  <div class="command-area">
+    <p style="margin-top: 20px;">Say a command...</p>
+    <button class="voice-btn" onclick="startVoiceCommand()">🎤 Start Voice Command</button>
+    <button id="emergencyBtn" class="emergency-btn" onclick="toggleEmergency()">🚨 Emergency Mode</button>
+    <p id="status">Awaiting command...</p>
+  </div>
+
+  <footer>
+    Developed by Abinaya for the Google Home API Developer Challenge 2025 💡
+  </footer>
+
+  <script>
+    const fan = document.getElementById('fan');
+    const tv = document.getElementById('tv');
+    const speaker = document.getElementById('speaker');
+    const light = document.getElementById('light');
+    const emergencyBtn = document.getElementById('emergencyBtn');
+    const statusText = document.getElementById('status');
+
+    function speak(text, female = true) {
+      const msg = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      if (female) {
+        msg.voice = voices.find(v => v.name.includes('Female') || v.name.includes('Google UK English Female')) || voices[0];
+      }
+      speechSynthesis.speak(msg);
+      statusText.textContent = text;
+    }
+
+    function toggleDevice(device, name) {
+      device.classList.toggle('active');
+      if (device.classList.contains('active')) {
+        speak(name + ' is on');
+      } else {
+        speak(name + ' is off');
+      }
+    }
+
+    fan.onclick = () => toggleDevice(fan, 'Fan');
+    tv.onclick = () => toggleDevice(tv, 'TV');
+    speaker.onclick = () => toggleDevice(speaker, 'Speaker');
+    light.onclick = () => toggleDevice(light, 'Light');
+
+    function toggleEmergency() {
+      const isActive = document.body.classList.contains('emergency-mode');
+
+      if (isActive) {
+        document.body.classList.remove('emergency-mode');
+        fan.classList.remove('active');
+        light.classList.remove('active');
+        emergencyBtn.textContent = '🚨 Emergency Mode';
+        speak("Emergency Mode deactivated. Fan and light turned off.");
+      } else {
+        document.body.classList.add('emergency-mode');
+        fan.classList.add('active');
+        light.classList.add('active');
+        emergencyBtn.textContent = '✅ Deactivate Emergency';
+        speak("Emergency Mode activated. Fan and light turned on.");
+      }
+    }
+
+    function startVoiceCommand() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const command = event.results[0][0].transcript.toLowerCase();
+        if (command.includes('fan')) fan.click();
+        else if (command.includes('tv')) tv.click();
+        else if (command.includes('speaker')) speaker.click();
+        else if (command.includes('light')) light.click();
+        else if (command.includes('emergency')) toggleEmergency();
+        else speak("Command not recognized.");
+      };
+
+      recognition.onerror = function() {
+        speak("Sorry, I didn't catch that.");
+      };
+    }
+
+    // Preload voices for smoother experience
+    window.speechSynthesis.onvoiceschanged = () => {};
+  </script>
+
+</body>
+</html>
